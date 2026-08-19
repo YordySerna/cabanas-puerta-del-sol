@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Permite animar el ángulo del borde cónico (ShineBorder / Magic UI). */
+@property --angulo {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@layer base {
+  :root {
+    --gap: 1rem;
+    --duration: 40s;
+  }
+
+  * {
+    @apply border-madera-200/60;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Deja aire bajo el navbar fijo al saltar con anclas. */
+    scroll-padding-top: 5.5rem;
+  }
+
+  body {
+    @apply bg-crema font-sans text-bosque-900 antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    @apply bg-sol-400/35 text-bosque-950;
+  }
+
+  /* Scrollbar discreta, en tono madera. */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-arena;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-madera-400/70;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-madera-500;
+  }
+
+  /* Respeta a quien pide menos movimiento. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* Etiqueta pequeña que abre cada sección. */
+  .eyebrow {
+    @apply inline-flex items-center gap-2.5 text-[0.7rem] font-medium uppercase tracking-widest2 text-madera-600;
+  }
+
+  /* Título editorial serif con quiebre elegante. */
+  .titulo-seccion {
+    @apply font-serif text-4xl leading-[1.08] tracking-tight text-bosque-900 sm:text-5xl lg:text-[3.4rem];
+  }
+
+  .parrafo {
+    @apply text-base leading-relaxed text-bosque-700/85 sm:text-[1.05rem];
+  }
+
+  /* Vidrio esmerilado usado en navbar, cards de reserva y formularios. */
+  .cristal {
+    @apply border border-white/15 bg-white/10 backdrop-blur-xl;
+  }
+
+  .cristal-claro {
+    @apply border border-madera-200/70 bg-white/70 backdrop-blur-md;
+  }
+
+  /* Línea divisoria degradada, sutil. */
+  .hilo {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-madera-300/70 to-transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Máscara de desvanecido lateral para los marquees. */
+  .mask-lateral {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 12%,
+      black 88%,
+      transparent
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 12%,
+      black 88%,
+      transparent
+    );
+  }
+
+  .grano-sutil::after {
+    content: "";
+    @apply pointer-events-none absolute inset-0 bg-grano opacity-[0.18] mix-blend-overlay;
+  }
+}
