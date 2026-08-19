@@ -1,6 +1,7 @@
 name: Publicar en GitHub Pages
 
-# Cada push a main reconstruye el sitio y lo publica solo.
+# Cada push a main publica el sitio. No hay nada que compilar: lo que está
+# en el repositorio es exactamente lo que se sirve.
 on:
   push:
     branches: [main]
@@ -17,32 +18,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  construir:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Instalar dependencias
-        run: npm ci
-
-      - name: Exportar el sitio estático
-        run: npm run build
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./out
-
   publicar:
-    needs: construir
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
       - id: despliegue
         uses: actions/deploy-pages@v4

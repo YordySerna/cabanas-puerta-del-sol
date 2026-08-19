@@ -1,267 +1,252 @@
 # Cabañas Puerta del Sol — Landing Page
 
-Landing inmersiva para el complejo turístico **Cabañas Puerta del Sol**
+Landing para el complejo turístico **Cabañas Puerta del Sol**
 (Ruta S-785, KM 1 camino a Calafquén, Loncoche, Región de La Araucanía).
 
 **En vivo:** <https://yordyserna.github.io/cabanas-puerta-del-sol/>
 
-Next.js 14 (App Router) · TypeScript · Tailwind CSS · Framer Motion · lucide-react.
-Se exporta como sitio estático y se publica solo en GitHub Pages.
+HTML + CSS + JavaScript clásico. **Sin build, sin npm, sin frameworks.**
+Lo que está en el repositorio es exactamente lo que se sirve.
 
 ---
 
-## 1. Comandos
+## 1. Cómo trabajar en él
+
+Abre `index.html` con doble clic. Eso es todo — no hay que instalar nada ni
+levantar nada. Guardas y recargas.
+
+Si necesitas verlo servido por HTTP (para probar el mapa o los enlaces
+absolutos como los ve GitHub Pages):
 
 ```bash
-npm run dev
+powershell -ExecutionPolicy Bypass -File serve.ps1
 ```
 
-Desarrollo en <http://localhost:3000>, con recarga al guardar.
+Queda en <http://localhost:8765/>.
+
+Para comprimir fotos nuevas que dejes en `assets/img/`:
 
 ```bash
-npm run build
+powershell -ExecutionPolicy Bypass -File optimizar-imagenes.ps1
 ```
 
-Genera el sitio estático completo en `out/`.
+Reescala a 2400 px de lado mayor, convierte a JPEG de calidad 82 y borra el
+original. Los `.jpg` que ya existen los deja intactos, así que puedes
+ejecutarlo cuantas veces quieras. Después actualiza la ruta `.png` → `.jpg`
+en `index.html`.
 
-```bash
-npm run preview
-```
-
-Sirve `out/` en <http://localhost:4000/cabanas-puerta-del-sol/> imitando a
-GitHub Pages — misma subruta, mismos 404. Úsalo para comprobar que nada se
-rompió **antes** de publicar.
-
-```bash
-npm run imagenes
-```
-
-Comprime las fotos nuevas que dejes en `public/imagenes/`.
-
-### Qué hace cada dependencia
-
-| Paquete | Para qué |
-|---|---|
-| `framer-motion` | Todas las animaciones: parallax, fade-in al scroll, hover, menú móvil. |
-| `tailwindcss` + `postcss` + `autoprefixer` | Sistema de estilos y la paleta personalizada. |
-| `lucide-react` | Íconos de línea (ligeros, se pintan con `currentColor`). |
-| `clsx` + `tailwind-merge` | El helper `cn()` que resuelve conflictos de clases (patrón shadcn/Aceternity). |
-| `sharp` | Sólo lo usa `npm run imagenes` para comprimir fotos. |
-| `next` / `react` / `react-dom` | El framework. |
+> Este script reemplaza al viejo `npm run imagenes`: usa .NET (WIC) en vez de
+> Node + sharp, porque esta máquina no tiene Node. En Windows 11 lee PNG,
+> HEIC y WebP. Rinde lo mismo: la foto de prueba pasó de 757 KB a 96 KB.
 
 ---
 
 ## 2. Estructura
 
 ```
-app/
-  layout.tsx        Fuentes (Playfair + Inter), metadata SEO y JSON-LD
-  page.tsx          Composición de las 6 secciones
-  globals.css       Reset, tokens, utilidades (.eyebrow, .cristal, .mask-lateral…)
+index.html                Todo el contenido del sitio, escrito a mano
+assets/
+  css/estilos.css         Tokens, secciones y movimiento, en una sola hoja
+  js/app.js               Un IIFE: nav, calendario, formulario, animaciones
+  img/                    Las 8 fotos que sirve el sitio (comprimidas)
 
-components/
-  navbar.tsx              Nav fijo, transparente sobre el hero, menú móvil
-  hero.tsx                1 · Portada con parallax y título palabra a palabra
-  quienes-somos.tsx       2 · Bloque asimétrico con doble parallax
-  instalaciones.tsx       3 · Bento grid de 5 tarjetas con glow
-  franja-parallax.tsx     Franja de respiro entre secciones
-  reservas.tsx            4 · Calendario de rango + panel de resumen
-  experiencia.tsx         5 · Marquee infinito de lo que ofrece el recinto
-  contacto.tsx            6 · Formulario + datos + mapa + pie
-  whatsapp-flotante.tsx   Botón flotante que aparece tras el hero
-  logo.tsx                Isotipo del sol en SVG (recreado del logo original)
-  ui/
-    reveal.tsx          <Reveal> y <TituloRevela>  (fade-in al scroll)
-    marquee.tsx         <Marquee>                  (carrusel infinito, puro CSS)
-    glow-card.tsx       <GlowCard>                 (spotlight que sigue al cursor)
-    shine-border.tsx    <ShineBorder>              (borde cónico animado)
-    shimmer-button.tsx  <BotonBrillo>              (CTA con barrido de luz)
-    foto.tsx            <Foto>                     (next/image + basePath)
-
-lib/
-  site.ts   👈 Todos los datos del negocio en un solo archivo
-  utils.ts  Helper cn()
-
-scripts/
-  optimizar-imagenes.mjs   npm run imagenes
-  servir-export.mjs        npm run preview
-
-.github/workflows/deploy.yml   Publica solo en cada push a main
-
-public/imagenes/   Las fotos que sirve el sitio (comprimidas)
-imagenes/          Tus originales — fuera del repo, sólo en tu disco
+serve.ps1                 Servidor local para revisar por HTTP
+optimizar-imagenes.ps1    Compresión de fotos nuevas
+imagenes/                 Tus originales — fuera del repo, sólo en tu disco
+.github/workflows/deploy.yml   Publica en cada push a main
 ```
+
+Sólo tres archivos importan. El HTML lleva el contenido, el CSS lleva el
+aspecto y el JS lleva el comportamiento. No hay nada generado.
 
 ---
 
 ## 3. Dónde tocar cada cosa
 
-| Quiero cambiar… | Archivo |
+| Quiero cambiar… | Dónde |
 |---|---|
-| Teléfono, dirección, correo, redes, horario | `lib/site.ts` |
-| Textos del hero | `components/hero.tsx` |
-| Historia del recinto y cifras | `components/quienes-somos.tsx` |
-| Tarjetas de instalaciones (título, foto, etiquetas) | array `instalaciones` en `components/instalaciones.tsx` |
-| Tipos de estadía del formulario de reserva | array `alojamientos` en `components/reservas.tsx` |
-| Lo que aparece en el marquee | arrays `primeraFila` / `segundaFila` en `components/experiencia.tsx` |
-| Colores, tipografías, animaciones | `tailwind.config.ts` |
+| Teléfono, dirección, horario | Búscalos en `index.html` — están escritos, no vienen de un archivo de datos |
+| Textos de cualquier sección | La sección correspondiente en `index.html`, marcada con un comentario `═══` |
+| Colores y sombras | Bloque `:root` al inicio de `assets/css/estilos.css` |
+| Tipos de estadía del calendario | Los tres `<button class="opcion">` en la sección de reservas |
+| Lo que aparece en la cinta | Los `<li class="ficha">` de la sección Experiencia (van duplicados a propósito: ver §6) |
+| Velocidad de las animaciones | Los `animation:` del CSS. Nada de esto vive en el JS |
+
+El número de WhatsApp aparece en varios enlaces `wa.me/56974762567`. Si cambia,
+reemplázalo en todo el archivo de una vez.
 
 ---
 
-## 4. Imágenes
+## 4. Las cuatro reglas que sostienen el diseño
 
-Todas las rutas se escriben como **`/imagenes/...`** y el componente
-[`<Foto>`](components/ui/foto.tsx) les antepone el basePath de GitHub Pages.
+Son decisiones deliberadas. Si las rompes, el sitio empieza a parecerse a
+cualquier plantilla.
 
-> **Ojo:** usa `<Foto>`, no `next/image` directamente. Como el sitio se exporta
-> estático, `next/image` deja el `src` sin el prefijo `/cabanas-puerta-del-sol`
-> y la foto daría 404 en producción (en `localhost` se vería bien, que es lo
-> traicionero).
+**a) Ningún borde de 1 px.** No hay una sola declaración `border` decorativa en
+todo el CSS (compruébalo: `grep border assets/css/estilos.css`). Los bloques se
+separan por **contraste de fondo** — hueso, arena, verde noche alternándose — y
+por **sombra larga y baja**. Los divisores internos son `box-shadow: 0 -1px 0`,
+nunca `border-top`. Los campos del formulario se definen por su relleno.
 
-| Archivo publicado | Foto original | Dónde se usa |
+**b) Un solo énfasis en toda la página.** La palabra "piscina" del titular lleva
+el agua de la piscina recortada dentro de las letras (`background-clip: text`).
+Es el único recurso de énfasis del sitio y no se repite en ninguna sección. La
+regla no es evitar la técnica, es no gastarla.
+
+**c) Radios asimétricos y alternados.** `--r-a: 44px 10px 44px 10px` y su espejo
+`--r-b`. Las tarjetas vecinas alternan entre los dos. Nada de 16 px iguales en
+todos lados.
+
+**d) Que se mueva poco.** La referencia es linear.app, no una plantilla de
+Envato. Las manchas del fondo tardan entre 38 y 82 segundos en dar una vuelta:
+la idea es que no se note mirándolas.
+
+---
+
+## 5. Contraste — los números
+
+Todo el texto se midió sobre la página renderizada, no sobre la paleta teórica.
+**191 elementos con texto revisados, 190 cumplen** el mínimo de 4,5:1.
+
+Los tokens de color, con su ratio:
+
+| Token | Sobre | Ratio |
 |---|---|---|
-| `piscina-principal.jpg` | `piscina.png` | **Hero** + tarjeta "Canchas" + imagen de Open Graph |
-| `piscina-toldos.jpg` | `foto piscina.png` | Tarjeta "Piscina & solárium" |
-| `piscina-familias.jpg` | `foto piscina 2.png` | Tarjeta "Camping" |
-| `cabana-exterior.jpg` | `cabaña.png` | Tarjeta grande "Cabañas" |
-| `cabana-alero.jpg` | `cabaña 2.png` | Quiénes somos (foto principal) |
-| `estero-helechos.jpg` | `3.png` | Quiénes somos (foto secundaria) |
-| `laguna.jpg` | `laguna.png` | Tarjeta "Estero & senderos" |
-| `hortensias.jpg` | `imagen 3.png` | Franja parallax de la cita |
+| `--tinta` `#1B2E22` | hueso | 13,06 |
+| `--tinta-suave` `#41544A` | hueso | 7,36 |
+| `--naranja-hondo` `#9A3B0F` | hueso | 6,35 |
+| `--agua-honda` `#17707F` | hueso | 5,21 |
+| `--crema` `#F2EFE7` | verde noche | 15,13 |
+| `--crema-2` `#C9D2C8` | verde noche | 11,21 |
+| `--crema-3` `#A9B6AC` | verde noche | 8,26 |
+| `--sol-pal` `#FDC171` | verde noche | 10,80 |
+| `--sol` `#FB9C38` | verde noche | 8,21 |
 
-Los originales están en la carpeta `imagenes/` de tu disco y **no entran al
-repositorio** (pesan 14 MB). Dos quedaron fuera del sitio a propósito:
+Texto sobre fotografía, midiendo los píxeles reales de cada imagen con el velo
+aplicado encima:
 
-- `presentacion.png` — el flyer con el logo. De ahí salió el isotipo del sol y
-  la paleta naranja. No se usa como foto.
-- `entrada.png` — es una captura de Google Street View, con marca de agua
-  "© Google". Reemplázala por una foto propia si quieres usarla.
+| Dónde | Peor caso |
+|---|---|
+| Titular del hero | 9,59 |
+| Bajada del hero | 7,10 |
+| Palabra "piscina" (2 % más oscuro del relleno) | 4,54 |
+| Cita de la franja | 7,38 |
+| Títulos del bento | 11,36 |
+| Nav sobre la foto | 10,10 |
 
-### Compresión
+**Tres colores quedaron descartados por número, no por gusto:**
 
-Las 8 fotos pasaron de **11,9 MB a 1,6 MB** (87 % menos) sin pérdida visible.
-Como el sitio es estático, no hay optimizador en el servidor: lo que está en
-`public/imagenes/` es exactamente lo que descarga el visitante. Por eso importa
-pasar siempre por el script:
+- `#C24A09` sobre hueso da **4,46** — falla por cuatro centésimas. Por eso el
+  naranja de texto es `#9A3B0F`.
+- `#1E7F91` sobre hueso da **4,24**. Por eso el agua de texto es `#17707F`.
+- Blanco sobre el verde de WhatsApp `#25D366` da **1,98**. El glifo del botón
+  flotante queda blanco porque es la marca (los logotipos están exentos), pero
+  la etiqueta "Escríbenos" va en verde noche, que da 8,77.
 
-```bash
-npm run imagenes
-```
+**La única excepción deliberada:** la marca de agua "Sur" de la sección Nosotros
+da 1,13. Es decoración pura — 181 px, `aria-hidden`, no dice nada que no esté
+escrito al lado. WCAG exime el texto puramente decorativo. Si algún día te
+molesta, bórrala: es un solo `<span class="marca-agua">`.
 
-Reescala a 2400 px máximo, convierte a JPEG de calidad 82 y borra el PNG. Los
-JPEG ya existentes los deja intactos, así que puedes ejecutarlo cuantas veces
-quieras. Después actualiza la ruta `.png` → `.jpg` donde corresponda.
-
-### Pendientes de fotografía
-
-- **Camping real** (carpas en los sitios) → reemplaza `piscina-familias.jpg` en la tarjeta "Camping".
-- **Multicancha** → reemplaza `piscina-principal.jpg` en la tarjeta "Canchas".
-- **Portada en alta resolución.** `piscina-principal.jpg` mide 1211×614 px. Se ve
-  bien en notebook y celular, pero en un monitor grande queda justa. Si consigues
-  esa misma toma en resolución completa desde el teléfono, la portada gana mucho.
-
----
-
-## 5. Cómo funcionan las animaciones
-
-Cuatro patrones de Framer Motion; con estos cuatro puedes replicar el estilo en
-cualquier sección nueva.
-
-**a) Fade-in al hacer scroll** — [components/ui/reveal.tsx](components/ui/reveal.tsx)
-
-```tsx
-<Reveal delay={0.1} direction="arriba">
-  <h2>Aparezco al entrar en pantalla</h2>
-</Reveal>
-```
-
-Usa `whileInView` con `viewport={{ once: true }}`: ocurre una sola vez, con
-opacidad + desplazamiento + desenfoque.
-
-**b) Parallax** — `hero.tsx`, `quienes-somos.tsx`, `franja-parallax.tsx`
-
-```tsx
-const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-const y = useTransform(scrollYProgress, [0, 1], ["0%", "28%"]);
-<motion.div style={{ y }}>…</motion.div>
-```
-
-La profundidad la da usar **velocidades distintas** por capa (el fondo se mueve
-28 %, el contenido 55 %).
-
-**c) Glow en hover** — [components/ui/glow-card.tsx](components/ui/glow-card.tsx)
-
-Las coordenadas del mouse van a `useMotionValue` y arman un `radial-gradient`
-con `useMotionTemplate`. Una capa hace el halo interior y otra, recortada con
-`mask-composite`, enciende un filo de 1 px en el borde.
-
-**d) Marquee infinito** — [components/ui/marquee.tsx](components/ui/marquee.tsx)
-
-**CSS puro** (`animation: marquee var(--duration) linear infinite`): el contenido
-se clona 4 veces y se desplaza `-100% - gap`. Sin librerías de carrusel, sin
-saltos. La velocidad se cambia por clase:
-
-```tsx
-<Marquee pauseOnHover className="[--duration:52s]">…</Marquee>
-```
-
-Todas respetan `prefers-reduced-motion`.
+Para volver a medir, pega el auditor en la consola del navegador — recorre el
+DOM, resuelve el fondo real de cada elemento y reporta lo que no llega al
+mínimo.
 
 ---
 
-## 6. Reservas y formulario de contacto
+## 6. Detalles que costaron un bug
 
-Ninguno usa backend: **ambos abren WhatsApp con el mensaje ya redactado**
-(`https://wa.me/56974762567?text=…`). Es lo que mejor convierte para un recinto
-turístico y no requiere servidor ni pasarela de pago — y es lo único posible en
-un sitio estático.
+Si vas a tocar el CSS o el JS, lee esto antes.
+
+**El contenido está escrito en el HTML.** Si el script no carga, la página se
+lee igual. Hay un temporizador en el `<head>` que quita la clase `.js` a los
+2,2 segundos; `app.js` lo cancela al arrancar. Probado con `app.js` devolviendo
+404: la página aparece completa.
+
+**El nav arranca sólido, no transparente.** Sin JS, un nav transparente deja los
+enlaces cruzados sobre el texto de la sección. Por eso el estado sólido es el
+de partida y `.js .nav` lo vuelve transparente sobre el hero.
+
+**El detalle de las tarjetas va envuelto en un solo hijo.** `grid-template-rows:
+0fr` sólo controla la fila que declara. Con dos hijos, el segundo cae en una
+fila implícita `auto` y el bloque queda siempre abierto.
+
+**Las olas necesitan `max-width: none`.** El reset capa los `svg` al 100 % del
+contenedor y dejaría el mosaico a media escala, con un escalón visible.
+
+**Una ola lleva el color del bloque vecino, no el suyo.** Una ola superior
+pintada del color de su propia sección es invisible.
+
+**El trazo de la ola tiene que cerrar al mismo alto** con el que empieza
+(`y=58` en x=0 y en x=1440). Si no, el bucle deja un escalón.
+
+**El hover no pisa un día ya elegido** en el calendario. Si lo hace, queda texto
+crema sobre beige: 1,4:1.
+
+**La cinta duplica sus tarjetas a propósito.** El segundo grupo va
+`aria-hidden` y existe sólo para que el bucle no salte. Con
+`prefers-reduced-motion` se esconde el duplicado, no la fila entera — esconder
+la fila borraría seis servicios que sólo se nombran ahí.
+
+---
+
+## 7. Reservas y formulario
+
+Ninguno usa backend: **ambos abren WhatsApp con el mensaje ya redactado**. Es lo
+único posible en un sitio estático y es lo que mejor convierte para un recinto
+turístico.
 
 El calendario bloquea los días pasados, pero **no conoce la ocupación real**.
 Para eso habría que conectar un origen de datos (Google Calendar, iCal de
-Airbnb o una tabla propia), lo que implicaría dejar de ser un sitio estático.
+Airbnb), lo que implicaría dejar de ser un sitio estático.
+
+Comportamiento del rango: el primer clic fija la llegada, el segundo la salida.
+Un clic anterior a la llegada mueve la llegada en vez de invertir el rango. Con
+"Día de piscina" el calendario pasa a un solo día y la caja de salida se apaga.
 
 ---
 
-## 7. Publicación
+## 8. Publicación
 
-El sitio se publica solo. Cada push a `main` dispara
-[.github/workflows/deploy.yml](.github/workflows/deploy.yml), que instala,
-exporta y sube el resultado a GitHub Pages:
+Cada push a `main` dispara
+[.github/workflows/deploy.yml](.github/workflows/deploy.yml), que sube el
+repositorio tal cual a GitHub Pages. No compila nada.
 
 ```bash
 git add -A && git commit -m "Describe el cambio" && git push
 ```
 
-En ~2 minutos está en línea. Puedes seguir la ejecución con:
-
-```bash
-gh run watch
-```
-
-Detalles del montaje, por si algún día hay que tocarlo:
-
-- `output: "export"` en `next.config.mjs` genera HTML estático en `out/`.
-- `basePath` y `assetPrefix` valen `/cabanas-puerta-del-sol` **sólo en
-  producción**, por eso en `npm run dev` el sitio sigue en la raíz.
-- `postbuild` escribe `out/.nojekyll`; sin ese archivo GitHub Pages ignora la
-  carpeta `_next` y el sitio queda sin CSS ni JavaScript.
-- `images.unoptimized: true` porque el optimizador de Next necesita un servidor.
+En menos de un minuto está en línea. Puedes seguir la ejecución con
+`gh run watch`.
 
 ---
 
-## 8. Pendientes de contenido
+## 9. Pendientes de contenido
 
-- [ ] **Valoraciones reales.** La sección de opiniones se reemplazó por el
-      marquee "Qué encuentras aquí" con atributos verificables. Cuando el
-      recinto tenga reseñas reales de Google o Facebook, se puede volver a un
-      marquee de citas usando el mismo `<Marquee>`.
-- [ ] **Cifras de "Quiénes somos".** `+15 años`, `4 ha`, `25 m` y `Desde 2009`
-      son estimaciones de maqueta, publicadas a la espera de los datos reales.
-      Están en el array `cifras` de `components/quienes-somos.tsx` y en el sello
-      de la misma sección.
 - [ ] **Teléfono.** El flyer original dice **+56 9 649 526 28** y el sitio usa
-      **+56 9 7476 2567** (el que indicaste). Confirma cuál va y ajusta
-      `lib/site.ts`.
-- [ ] **Coordenadas.** `sitio.geo` apunta al centro de Loncoche. Con el punto
-      exacto del recinto, el mapa y el SEO local quedan finos.
-- [ ] **Dominio y correo.** `sitio.url` y `sitio.email` son provisorios.
+      **+56 9 7476 2567**. Confirma cuál va.
+- [ ] **Cifras de "Quiénes somos".** `+15 años`, `4 ha`, `25 m` y `Desde 2009`
+      son estimaciones de maqueta. Por eso ninguna aparece en el titular.
+- [ ] **Redes sociales.** Los enlaces del pie apuntan a `instagram.com` y
+      `facebook.com` sin cuenta.
+- [ ] **Coordenadas.** El mapa apunta a la dirección escrita, no al punto exacto
+      del recinto.
+- [ ] **Correo y dominio.** No hay correo publicado; todo el contacto pasa por
+      WhatsApp.
+- [ ] **Valoraciones reales.** Cuando el recinto tenga reseñas de Google o
+      Facebook, la cinta de "Qué encuentras acá" puede volverse una de citas
+      usando el mismo marcado.
+
+### Pendientes de fotografía
+
+- **Camping real** (carpas en los sitios) → hoy la tarjeta "Camping" usa una
+  foto del sector de piscina.
+- **Multicancha** → la tarjeta "Canchas" usa también una foto de la piscina.
+- **Portada en alta resolución.** `piscina-principal.jpg` mide 1211×614 px. Se
+  ve bien en notebook y celular; en un monitor grande queda justa. Es la misma
+  foto que rellena la palabra "piscina" del titular, así que una versión en
+  resolución completa mejora las dos cosas a la vez.
+
+Dos originales quedaron fuera a propósito: `presentacion.png` (el flyer con el
+logo, de ahí salió el isotipo del sol y la paleta naranja) y `entrada.png` (es
+una captura de Google Street View, con marca de agua).
