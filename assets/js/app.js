@@ -69,27 +69,50 @@
   var palabras = $$("#titular .pal > span");
   var enHero = $$(".hero [data-revela]");
 
-  if (hayGsap) {
-    var intro = gsap.timeline({ delay: 0.15 });
+  /* Deja el hero visible sin animarlo. */
+  function muestraHero() {
+    gsap.set(palabras, { opacity: 1, y: 0, filter: "blur(0px)" });
+    enHero.forEach(function (el) { gsap.set(el, { opacity: 1, y: 0 }); });
+  }
 
-    if (palabras.length) {
-      intro.to(palabras, {
-        opacity: 1,
-        y: 0,
-        filter: quieto ? "blur(0px)" : "blur(0px)",
-        duration: quieto ? 0.5 : 1.05,
-        stagger: 0.05,
-        ease: SUAVE
-      }, 0);
+  if (hayGsap) {
+    /*
+     * En una pestaña de segundo plano el navegador congela
+     * requestAnimationFrame, así que GSAP no avanza y el hero se quedaría
+     * en blanco hasta que la pestaña reciba foco. Si al cargar no estamos
+     * a la vista, se muestra sin animación y listo.
+     */
+    if (document.hidden) {
+      muestraHero();
+    } else {
+      var intro = gsap.timeline({ delay: 0.15 });
+
+      if (palabras.length) {
+        intro.to(palabras, {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: quieto ? 0.5 : 1.05,
+          stagger: 0.05,
+          ease: SUAVE
+        }, 0);
+      }
+      enHero.forEach(function (el) {
+        intro.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: 0.9,
+          ease: SUAVE
+        }, parseFloat(el.dataset.retraso || 0) + 0.1);
+      });
+
+      /* Segundo cinturón: si algo dejara la línea de tiempo a medias
+         (la pestaña se esconde a mitad de la entrada, por ejemplo), a los
+         4 segundos el hero se muestra igual. */
+      setTimeout(function () {
+        if (intro.progress() < 1) { intro.progress(1); }
+      }, 4000);
     }
-    enHero.forEach(function (el) {
-      intro.to(el, {
-        opacity: 1,
-        y: 0,
-        duration: 0.9,
-        ease: SUAVE
-      }, parseFloat(el.dataset.retraso || 0) + 0.1);
-    });
   } else {
     /* Sin GSAP no hay animación, pero tampoco nada escondido. */
     raiz.classList.remove("js");
